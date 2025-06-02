@@ -1,1 +1,2 @@
-# Dynamic_mapping_Distillation
+# LLM2Vec_Distillation
+Distillation for 3 tasks
