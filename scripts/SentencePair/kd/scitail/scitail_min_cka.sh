@@ -1,5 +1,5 @@
 #! /bin/bash
-GPUS=(0, 1, 2, 3, 4, 5, 6, 7, 8)
+GPUS=(0)
 export CUDA_VISIBLE_DEVICES=$(IFS=,; echo "${GPUS[*]}")
 
 MASTER_ADDR=localhost
@@ -15,30 +15,32 @@ DISTRIBUTED_ARGS="--nproc_per_node $GPUS_PER_NODE \
                   --master_port $MASTER_PORT"
 
 # model
-BASE_PATH=/content/LLM2Vec_Distillation
+BASE_PATH=/content/Dynamic_mapping_Distillation
 CKPT_NAME="bert"
 CKPT_PATH="${BASE_PATH}/model_hub/${CKPT_NAME}"
 TEACHER_MODEL_NAME="LLM2Vec"
-TEACHER_MODEL_PATH="${BASE_PATH}/model_hub/${TEACHER_MODEL_NAME}"
+TEACHER_MODEL_PATH="checkpoint_path"
 # data
-DATA_DIR="${BASE_PATH}/data/scitail/"
+DATA_DIR="/content/drive/MyDrive/2MMath/data_distillation/data_test/scitail"
 NUM_LABELS=2
 # task
-TASK="rmse"
+TASK="min_cka"
 # hp
-BATCH_SIZE=16
+BATCH_SIZE=4
 LR=0.00001
 GRAD_ACC=1
-EVAL_BATCH_SIZE=32
-EPOCH=2
-KD_RATE=0.6
+EVAL_BATCH_SIZE=4
+EPOCH=5
+KD_RATE=0.5
 KD_TEMP=2.0
 # length
 MAX_LENGTH=512
-
+# distiller
+PROJECTOR_CONFIG_PATH="${BASE_PATH}/configs/projector_config.json"
+PROJECTOR_LR=0.001
 # runtime
 PRECISION="bf16"
-CRITERION="rmse"
+CRITERION="min_cka"
 KD_OBJ="forward_kl"  # [forward_kl, reverse_kl, js_divergence, skewed_forward_kl, skewed_reverse_kl, adaptive_kl]
 CONFIG="${KD_OBJ}"
 SETTING=criterion=${CRITERION}__${CONFIG}__teacher=${KD_RATE}__kd^temp=${KD_TEMP}__tea^temp=${TEA_TEMP}__epoch=${EPOCH}__bsz=${BATCH_SIZE}x${GRAD_ACC}x${GPUS_PER_NODE}=$((BATCH_SIZE * GRAD_ACC * GPUS_PER_NODE * NNODES))__lr=${LR}
@@ -52,8 +54,8 @@ mkdir -p ${SAVE_PATH}
 OPTS=""
 # model
 OPTS+=" --base-path ${BASE_PATH}"
-OPTS+=" --model-path ${CKPT_PATH}"
 OPTS+=" --ckpt-name ${CKPT_NAME}"
+OPTS+=" --model-path ${CKPT_PATH}"
 OPTS+=" --n-gpu ${GPUS_PER_NODE}"
 OPTS+=" --teacher-model-path ${TEACHER_MODEL_PATH}"
 OPTS+=" --teacher-model-fp16"
@@ -77,7 +79,11 @@ OPTS+=" --clip-grad 1.0"
 OPTS+=" --num-epochs ${EPOCH}"
 OPTS+=" --kd-rate ${KD_RATE}"
 OPTS+=" --kd-temperature ${KD_TEMP}"
-
+OPTS+=" --kd-objective ${KD_OBJ}"
+# distiller
+OPTS+=" --projector-lr ${PROJECTOR_LR}"
+OPTS+=" --projector-config-path ${PROJECTOR_CONFIG_PATH}"
+# OPTS+=" --projector-path ${PROJECTOR_PATH}"
 # length
 OPTS+=" --max-length ${MAX_LENGTH}"
 OPTS+=" --max-prompt-length 256"
@@ -94,14 +100,7 @@ OPTS+=" --criterion ${CRITERION}"
 OPTS+=" --seed ${SEED}"
 # deepspeed
 OPTS+=" --deepspeed"
-if [[ $PRECISION == "bf16" ]]; then
-    OPTS+=" --deepspeed_config ${BASE_PATH}/configs/deepspeed/ds_config_bf16.json"
-elif [[ $PRECISION == "fp16" ]]; then
-    OPTS+=" --deepspeed_config ${BASE_PATH}/configs/deepspeed/ds_config.json"
-elif [[ $PRECISION == "fp32" ]]; then
-    OPTS+=" --deepspeed_config ${BASE_PATH}/configs/deepspeed/ds_config_fp32.json"
-fi
-
+OPTS+=" --deepspeed_config ${BASE_PATH}/configs/deepspeed/ds_config_test.json"
 
 export NCCL_DEBUG=""
 export WANDB_DISABLED=True
