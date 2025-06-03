@@ -49,6 +49,7 @@ class RANK_CKA(VariousDivergence):
         kd_loss, log = self.compute_ranking_cka_ot_loss(
             outputs, teacher_outputs, input_data, output_data, distiller, log
         )
+        print("rank_cka_loss:", kd_loss)
         
         # Combine losses
         loss = (1.0 - self.kd_rate) * loss + self.kd_rate * kd_loss
