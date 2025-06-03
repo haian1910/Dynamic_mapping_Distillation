@@ -88,7 +88,7 @@ class RANK_CKA(VariousDivergence):
         tea_k_hiddens = norm_tea_index_embeds.float()
 
         # Define the layers to process (you can modify this list as needed)
-        student_layers_to_process = [1, 6, 11]  # Skip layer 0 (embeddings)
+        student_layers_to_process = [3, 7, 11]  # Skip layer 0 (embeddings)
         
         # Find best matching layers
         best_matching_layers = self.find_best_matching_layers(
