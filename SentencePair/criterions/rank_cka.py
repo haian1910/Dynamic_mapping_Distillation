@@ -102,15 +102,10 @@ class RANK_CKA(VariousDivergence):
         device = outputs.hidden_states[0].device
         
         for k, l in best_matching_layers.items():
-            if l != -1:  # Valid matching layer found
-                # Get aligned hidden states
-                t2s_hiddens = self.compute_align_matrix_layer_k(
-                    k, l, outputs, teacher_outputs, stu_q_hiddens, tea_k_hiddens
-                )
-                
+            if l != -1:                 
                 # Compute OT loss between student layer k and aligned teacher layer l
                 ot_loss = self.compute_ot_loss_for_layer_pair(
-                    outputs.hidden_states[k], t2s_hiddens,
+                    outputs.hidden_states[k], teacher_outputs.hidden_states[l],
                     input_data["attention_mask"], input_data["teacher_attention_mask"],
                     distiller
                 )
