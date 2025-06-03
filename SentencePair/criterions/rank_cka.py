@@ -170,7 +170,7 @@ class RANK_CKA(VariousDivergence):
         
         for k in student_layers:
             if k == 11:
-                best_matching_layers[k] = 33
+                best_matching_layers[k] = 31
                 break
             index_list = [3*k-2, 3*k-1, 3*k, 3*k+1, 3*k+2]
             best_loss = float('inf')
