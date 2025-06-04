@@ -72,14 +72,19 @@ class MIN_CKA(VariousDivergence):
         tea_embed_tokens = self.get_embedding_layer(distiller.teacher_model, "teacher")
 
         stu_input_embeds = stu_embed_tokens(input_data["input_ids"]).detach()
+
         tea_input_embeds = tea_embed_tokens(input_data["teacher_input_ids"]).detach()
 
         # Normalize teacher embeddings
         norm_tea_index_embeds = tea_input_embeds / tea_input_embeds.std()
         
         # Project student embeddings to query space
-        stu_q_hiddens = distiller.projectors["query"](stu_input_embeds).float()
-        tea_k_hiddens = norm_tea_index_embeds.float()
+        # stu_q_hiddens = distiller.projectors["query"](stu_input_embeds).float()
+        # tea_k_hiddens = norm_tea_index_embeds.float()
+
+        # Use the last hidden states from the outputs instead of input embeddings
+        stu_q_hiddens = distiller.projectors["query"](outputs.hidden_states[-1]).float()
+        tea_k_hiddens = teacher_outputs.hidden_states[-1].float() / teacher_outputs.hidden_states[-1].std()
 
         # Define the layers to process
         student_layers_to_process = [2, 7, 11]
@@ -104,6 +109,8 @@ class MIN_CKA(VariousDivergence):
                 total_cka_loss += pair_cka_loss
                 num_pairs += 1
             else:
+                weight = []
+                align_matrix = []
                 # Find best matching teacher layer
                 index_list = [3*k-2, 3*k-1, 3*k, 3*k+1, 3*k+2]
                 best_cka_loss = float('inf')
@@ -116,19 +123,17 @@ class MIN_CKA(VariousDivergence):
                     t2s_hiddens = self.compute_align_matrix_layer_k(
                         k, l, outputs, teacher_outputs, stu_q_hiddens, tea_k_hiddens
                     )
+                    align_matrix.append(t2s_hiddens)
                     
                     # Compute CKA loss (1 - CKA similarity)
                     cka_similarity = cka_loss_fn(t2s_hiddens, outputs.hidden_states[k])
-                    cka_loss = 1 - math.sqrt(cka_similarity)
-                    
-                    if cka_loss < best_cka_loss:
-                        best_cka_loss = cka_loss
-                
-                # Add the minimum CKA loss found
-                if best_cka_loss != float('inf'):
-                    total_cka_loss += best_cka_loss
-                    num_pairs += 1
-        
+                    weight.append(math.sqrt(cka_similarity))
+
+                weight_norm = [w / sum(weight) for w in weight]
+                weighted_sum_matrix = sum(w * a for w, a in zip(weight_norm, align_matrix))
+                pair_cka_loss = 1 - math.sqrt(cka_loss_fn(weighted_sum_matrix, outputs.hidden_states[k]))
+                total_cka_loss += pair_cka_loss
+                num_pairs += 1
         # Convert logging values to tensors
         log["min_cka_loss"] = total_cka_loss
         log["num_layer_pairs"] = torch.tensor(num_pairs, device=device)
