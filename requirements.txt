@@ -4,3 +4,5 @@ matplotlib
 deepspeed==0.16.5
 peft==0.15.1
 editdistance==0.8.1
+pandas
+llm2vec
