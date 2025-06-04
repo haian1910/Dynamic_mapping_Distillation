@@ -9,6 +9,7 @@ from .ot_pro import OT_PRO
 from .ot_pro_rmse_cka import OT_PRO_RMSE_CKA
 from .multi_level_ot import MULTI_LEVEL_OT
 from .rank_cka import RANK_CKA
+from .min_cka import MIN_CKA
 
 criterion_list = {
     "cross_entropy": CrossEntropyLoss,
@@ -22,7 +23,8 @@ criterion_list = {
     "ot_pro": OT_PRO,
     "ot_pro_rmse_cka": OT_PRO_RMSE_CKA,
     "multi_level_ot": MULTI_LEVEL_OT,
-    "rank_cka": RANK_CKA
+    "rank_cka": RANK_CKA,
+    "min_cka": MIN_CKA
 }
 
 def build_criterion(args):
