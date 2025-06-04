@@ -1,5 +1,5 @@
 #! /bin/bash
-GPUS=(0)
+GPUS=(0 1 2 3 4 5 6 7)
 export CUDA_VISIBLE_DEVICES=$(IFS=,; echo "${GPUS[*]}")
 
 MASTER_ADDR=localhost
@@ -15,13 +15,13 @@ DISTRIBUTED_ARGS="--nproc_per_node $GPUS_PER_NODE \
                   --master_port $MASTER_PORT"
 
 # model
-BASE_PATH=/content/Dynamic_mapping_Distillation
+BASE_PATH=/mnt/bn/magellan-product-audit/tu.vu/matrixone/Dynamic_mapping_Distillation
 CKPT_NAME="bert"
 CKPT_PATH="${BASE_PATH}/model_hub/${CKPT_NAME}"
 TEACHER_MODEL_NAME="LLM2Vec"
-TEACHER_MODEL_PATH="checkpoint_path"
+TEACHER_MODEL_PATH="/mnt/bn/magellan-product-audit/tu.vu/matrixone/LLM2Vec_Distillation/outputs/LLM2Vec/sft/scitail/criterion=cross_entropy__lora-rank=16-alpha=32-dropout=0.1-bf16__epoch=2__bsz=16x1x1=16__lr=0.00001/epoch1_step1444_loss0.1227"
 # data
-DATA_DIR="/content/drive/MyDrive/2MMath/data_distillation/data_test/scitail"
+DATA_DIR="${BASE_PATH}/data/scitail/"
 NUM_LABELS=2
 # task
 TASK="rank_cka"
@@ -108,5 +108,7 @@ export TF_CPP_MIN_LOG_LEVEL=3
 export PYTHONPATH=${BASE_PATH}
 CMD="torchrun ${DISTRIBUTED_ARGS} ${BASE_PATH}/SentencePair/distillation.py ${OPTS}"
 
-${CMD} \
->> ${SAVE_PATH}/train.log 2>&1 &
+echo ${CMD}
+# $CMD
+echo ${SAVE_PATH}/train.log
+${CMD} >> ${SAVE_PATH}/train.log
