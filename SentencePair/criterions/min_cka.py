@@ -7,12 +7,6 @@ class MIN_CKA(VariousDivergence):
     def __init__(self, args) -> None:
         super().__init__(args)
         self.kd_rate = args.kd_rate  # Ensure kd_rate is initialized
-        # OT parameters (copied from ot.py)
-        self.sinkhorn_alpha = 0.1
-        self.stopThr = 1e-9
-        self.OT_max_iter = 100
-        self.epsilon = 1e-9
-        self.ot_dist_type = 'attention'  # or 'euclidean', 'cosine'
 
     def forward(
         self, 
@@ -45,7 +39,8 @@ class MIN_CKA(VariousDivergence):
                 output_hidden_states=True
             )
         
-        kd_loss, log = self.compute_min_cka(
+        # Compute minimum CKA loss
+        kd_loss, log = self.compute_min_cka_loss(
             outputs, teacher_outputs, input_data, output_data, distiller, log
         )
         print("min_cka_loss:", kd_loss)
@@ -69,7 +64,7 @@ class MIN_CKA(VariousDivergence):
         logging_output = self.record_logging_output(logging_output, batch_denom, log)
         return loss, logging_output
     
-    def compute_min_cka(
+    def compute_min_cka_loss(
         self, outputs, teacher_outputs, input_data, output_data, distiller, log
     ):
         # Extract embeddings for student and teacher
@@ -86,46 +81,59 @@ class MIN_CKA(VariousDivergence):
         stu_q_hiddens = distiller.projectors["query"](stu_input_embeds).float()
         tea_k_hiddens = norm_tea_index_embeds.float()
 
-        # Define the layers to process (you can modify this list as needed)
-        student_layers_to_process = [3, 7, 11]  # Skip layer 0 (embeddings)
+        # Define the layers to process
+        student_layers_to_process = [3, 7, 11]
         
-        # Find best matching layers
-        best_matching_layers = self.find_best_matching_layers(
-            student_layers_to_process, outputs, teacher_outputs, 
-            stu_q_hiddens, tea_k_hiddens
-        )
-        
-        # Compute OT loss for each matched pair
-        total_ot_loss = 0
+        # Find best matching layers and compute CKA loss directly
+        total_cka_loss = 0
         num_pairs = 0
         device = outputs.hidden_states[0].device
+        cka_loss_fn = CKALoss(eps=1e-8)
         
-        for k, l in best_matching_layers.items():
-            if l != -1:                 
-                # Compute OT loss between student layer k and aligned teacher layer l
-                ot_loss = self.compute_ot_loss_for_layer_pair(
-                    outputs.hidden_states[k], teacher_outputs.hidden_states[l],
-                    input_data["attention_mask"], input_data["teacher_attention_mask"],
-                    distiller
+        for k in student_layers_to_process:
+            if k == 11:
+                # Fixed mapping for the last layer
+                best_teacher_layer = 31
+                # Compute CKA loss for fixed mapping
+                t2s_hiddens = self.compute_align_matrix_layer_k(
+                    k, best_teacher_layer, outputs, teacher_outputs, stu_q_hiddens, tea_k_hiddens
                 )
+                cka_similarity = cka_loss_fn(t2s_hiddens, outputs.hidden_states[k])
+                pair_cka_loss = 1 - math.sqrt(cka_similarity)
                 
-                total_ot_loss += ot_loss
+                total_cka_loss += pair_cka_loss
                 num_pairs += 1
+            else:
+                # Find best matching teacher layer
+                index_list = [3*k-2, 3*k-1, 3*k, 3*k+1, 3*k+2]
+                best_cka_loss = float('inf')
+                
+                for l in index_list:
+                    if l < 0 or l >= len(teacher_outputs.hidden_states):
+                        continue
+                    
+                    # Compute aligned hidden states
+                    t2s_hiddens = self.compute_align_matrix_layer_k(
+                        k, l, outputs, teacher_outputs, stu_q_hiddens, tea_k_hiddens
+                    )
+                    
+                    # Compute CKA loss (1 - CKA similarity)
+                    cka_similarity = cka_loss_fn(t2s_hiddens, outputs.hidden_states[k])
+                    cka_loss = 1 - math.sqrt(cka_similarity)
+                    
+                    if cka_loss < best_cka_loss:
+                        best_cka_loss = cka_loss
+                
+                # Add the minimum CKA loss found
+                if best_cka_loss != float('inf'):
+                    total_cka_loss += best_cka_loss
+                    num_pairs += 1
         
         # Convert logging values to tensors
-        log["min_cka_loss"] = total_ot_loss
+        log["min_cka_loss"] = total_cka_loss
         log["num_layer_pairs"] = torch.tensor(num_pairs, device=device)
         
-        '''# Average OT loss across all pairs
-        if num_pairs > 0:
-            avg_ot_loss = total_ot_loss / num_pairs
-        else:
-            avg_ot_loss = torch.tensor(0.0, device=outputs.hidden_states[0].device, requires_grad=True)
-        
-        log["ranking_cka_ot_loss"] = avg_ot_loss.item()
-        log["num_layer_pairs"] = num_pairs'''
-        
-        return total_ot_loss, log
+        return total_cka_loss, log
 
     def get_embedding_layer(self, model, model_type):
         """Extract embedding layer from different model architectures"""
@@ -157,40 +165,6 @@ class MIN_CKA(VariousDivergence):
         
         return t2s_hiddens
 
-    def find_best_matching_layers(self, student_layers, outputs, teacher_outputs, stu_q_hiddens, tea_k_hiddens):
-        """Find best matching teacher layer for each student layer using CKA"""
-        best_matching_layers = {}
-        cka_loss_fn = CKALoss(eps=1e-8)
-        
-        for k in student_layers:
-            if k == 11:
-                best_matching_layers[k] = 31
-                break
-            index_list = [3*k-2, 3*k-1, 3*k, 3*k+1, 3*k+2]
-            best_loss = float('inf')
-            best_index = -1
-            
-            for l in index_list:
-                if l < 0 or l >= len(teacher_outputs.hidden_states):
-                    continue
-                
-                # Compute aligned hidden states
-                t2s_hiddens = self.compute_align_matrix_layer_k(
-                    k, l, outputs, teacher_outputs, stu_q_hiddens, tea_k_hiddens
-                )
-                
-                # Compute CKA loss
-                cka_loss = cka_loss_fn(t2s_hiddens, outputs.hidden_states[k])
-                loss = 1 - cka_loss  # Convert CKA similarity to loss
-                
-                if loss < best_loss:
-                    best_loss = loss
-                    best_index = l
-            
-            best_matching_layers[k] = best_index
-        
-        return best_matching_layers
-
 
 class CKALoss(nn.Module):
     """CKA Loss for measuring similarity between hidden representations"""
@@ -208,9 +182,10 @@ class CKALoss(nn.Module):
         SH = SH - SH.mean(0, keepdim=True)
         TH = TH - TH.mean(0, keepdim=True)
         
-        # Compute CKA
+        # Compute CKA similarity
         num = torch.norm(SH.t().matmul(TH), 'fro')
         den1 = torch.norm(SH.t().matmul(SH), 'fro') + self.eps
         den2 = torch.norm(TH.t().matmul(TH), 'fro') + self.eps
         
-        return 1 - num / torch.sqrt(den1 * den2)
+        # Return CKA similarity (not loss)
+        return num / torch.sqrt(den1 * den2)
