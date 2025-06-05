@@ -21,8 +21,8 @@ CKPT_PATH="${BASE_PATH}/model_hub/${CKPT_NAME}"
 TEACHER_MODEL_NAME="LLM2Vec"
 TEACHER_MODEL_PATH="${BASE_PATH}/model_hub/${TEACHER_MODEL_NAME}" # GẮN LINK MODEL CHECKPOINT VÀO ĐÂY
 # data
-DATA_DIR="${BASE_PATH}/data/SICK/"
-# task
+DATASET=SICK
+DATA_DIR="${BASE_PATH}/data/${DATASET}"# task
 TASK="min_cka"
 # hp
 BATCH_SIZE=2
@@ -43,7 +43,7 @@ CRITERION="min_cka"
 KD_OBJ="forward_kl"  # [forward_kl, reverse_kl, js_divergence, skewed_forward_kl, skewed_reverse_kl, adaptive_kl]
 CONFIG="${KD_OBJ}"
 SETTING=criterion=${CRITERION}__${CONFIG}__teacher=${KD_RATE}__kd^temp=${KD_TEMP}__tea^temp=${TEA_TEMP}__epoch=${EPOCH}__bsz=${BATCH_SIZE}x${GRAD_ACC}x${GPUS_PER_NODE}=$((BATCH_SIZE * GRAD_ACC * GPUS_PER_NODE * NNODES))__lr=${LR}
-SAVE_PATH="${BASE_PATH}/outputs/${CKPT_NAME}/${TASK}/${SETTING}"
+SAVE_PATH="${BASE_PATH}/outputs/${CKPT_NAME}/${DATASET}/${TASK}/${SETTING}"
 SAVE_BEST_N_CKPTS=1
 # seed
 SEED=10
@@ -108,5 +108,7 @@ export TF_CPP_MIN_LOG_LEVEL=3
 export PYTHONPATH=${BASE_PATH}
 CMD="torchrun ${DISTRIBUTED_ARGS} ${BASE_PATH}/STS/distillation.py ${OPTS}"
 
-${CMD} \
->> ${SAVE_PATH}/train.log 2>&1 &
+echo ${CMD}
+# $CMD
+echo ${SAVE_PATH}/train.log
+${CMD} >> ${SAVE_PATH}/train.log
