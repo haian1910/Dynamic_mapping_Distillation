@@ -15,19 +15,19 @@ DISTRIBUTED_ARGS="--nproc_per_node $GPUS_PER_NODE \
                   --master_port $MASTER_PORT"
 
 # model
-BASE_PATH=/LLM2Vec_Distillation
+BASE_PATH=/mnt/bn/magellan-product-audit/tu.vu/matrixone/Dynamic_mapping_Distillation
 CKPT_NAME="LLM2Vec"
 CKPT_PATH="${BASE_PATH}/model_hub/${CKPT_NAME}"
 # data
-DATA_DIR="${BASE_PATH}/data/SICK/"
-# task
+DATASET=SICK
+DATA_DIR="${BASE_PATH}/data/${DATASET}"# task
 TASK="sft"
 # hp
 BATCH_SIZE=4
 LR=0.00001
 GRAD_ACC=1
 EVAL_BATCH_SIZE=4
-EPOCH=5
+EPOCH=10
 LORA_RANK=256
 LORA_ALPHA=16
 LORA_DROPOUT=0.1
@@ -38,7 +38,7 @@ PRECISION="bf16"
 CRITERION="sts_loss"
 CONFIG="lora-rank=${LORA_RANK}-alpha=${LORA_ALPHA}-dropout=${LORA_DROPOUT}-${PRECISION}"
 SETTING=criterion=${CRITERION}__${CONFIG}__epoch=${EPOCH}__bsz=${BATCH_SIZE}x${GRAD_ACC}x${GPUS_PER_NODE}=$((BATCH_SIZE * GRAD_ACC * GPUS_PER_NODE * NNODES))__lr=${LR}
-SAVE_PATH="${BASE_PATH}/outputs/${CKPT_NAME}/${TASK}/${SETTING}"
+SAVE_PATH="${BASE_PATH}/outputs/${CKPT_NAME}/${DATASET}/${TASK}/${SETTING}"
 SAVE_BEST_N_CKPTS=1
 # seed
 SEED=10
