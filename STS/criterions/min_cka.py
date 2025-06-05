@@ -56,7 +56,8 @@ class MIN_CKA(STSLoss):
         print("mse_loss:", loss)
         
         # Combine losses
-        kd_loss = kd_loss.to(dtype)
+        kd_loss = torch.tensor(kd_loss, device=device).to(dtype)
+
         loss = (1.0 - self.kd_rate) * loss + self.kd_rate * kd_loss
         log["loss"] = loss
 
