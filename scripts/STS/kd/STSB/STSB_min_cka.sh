@@ -15,14 +15,14 @@ DISTRIBUTED_ARGS="--nproc_per_node $GPUS_PER_NODE \
                   --master_port $MASTER_PORT"
 
 # model
-BASE_PATH=/content/Dynamic_mapping_Distillation
+BASE_PATH=/mnt/bn/magellan-product-audit/tu.vu/matrixone/Dynamic_mapping_Distillation
 CKPT_NAME="bert"
 CKPT_PATH="${BASE_PATH}/model_hub/${CKPT_NAME}"
 TEACHER_MODEL_NAME="LLM2Vec"
-TEACHER_MODEL_PATH="${BASE_PATH}/model_hub/${TEACHER_MODEL_NAME}" # GẮN LINK MODEL CHECKPOINT VÀO ĐÂY
+TEACHER_MODEL_PATH="/mnt/bn/magellan-product-audit/tu.vu/matrixone/Dynamic_mapping_Distillation/outputs/LLM2Vec/stsbenchmark/sft/criterion=sts_loss__lora-rank=256-alpha=16-dropout=0.1-bf16__epoch=5__bsz=4x1x1=4__lr=0.00001/epoch4_step5752_loss2.2994_pearson0.8373" # GẮN LINK MODEL CHECKPOINT VÀO ĐÂY
 # data
 DATASET=stsbenchmark
-DATA_DIR="${BASE_PATH}/data/${DATASET}"# task
+DATA_DIR="${BASE_PATH}/data/${DATASET}" #task
 TASK="min_cka"
 # hp
 BATCH_SIZE=2
@@ -111,4 +111,4 @@ CMD="torchrun ${DISTRIBUTED_ARGS} ${BASE_PATH}/STS/distillation.py ${OPTS}"
 echo ${CMD}
 # $CMD
 echo ${SAVE_PATH}/train.log
-${CMD} >> ${SAVE_PATH}/train.log
+${CMD} >> ${SAVE_PATH}/train.log 2>&1

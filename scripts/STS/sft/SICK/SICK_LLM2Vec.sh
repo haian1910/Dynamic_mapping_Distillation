@@ -1,5 +1,5 @@
 #! /bin/bash
-GPUS=(0 1 2 3 4 5 6 7)
+GPUS=(0)
 export CUDA_VISIBLE_DEVICES=$(IFS=,; echo "${GPUS[*]}")
 
 MASTER_ADDR=localhost
@@ -20,7 +20,7 @@ CKPT_NAME="LLM2Vec"
 CKPT_PATH="${BASE_PATH}/model_hub/${CKPT_NAME}"
 # data
 DATASET=SICK
-DATA_DIR="${BASE_PATH}/data/${DATASET}"# task
+DATA_DIR="${BASE_PATH}/data/${DATASET}" #task
 TASK="sft"
 # hp
 BATCH_SIZE=4

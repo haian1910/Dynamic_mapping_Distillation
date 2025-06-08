@@ -59,11 +59,11 @@ def prepare_dataset(args, distiller):
             log_rank("Num of test data: {}".format(len(data["test"])))
 
     elif args.do_eval:
-        data["test"] = DistillDataset(
-            args, "test", distiller.student_tokenizer,
+        data["dev"] = DistillDataset(
+            args, "dev", distiller.student_tokenizer,
             distiller.teacher_tokenizers
         )
-        log_rank("Num of test data: {}".format(len(data["test"])))
+        log_rank("Num of test data: {}".format(len(data["dev"])))
     else:
         raise ValueError("Do train and do eval must set one")
         
@@ -161,49 +161,52 @@ def finetune(args, tokenizer: AutoTokenizer, model: deepspeed.DeepSpeedEngine, o
                 data_iter.set_postfix(loss=loss.item())
 
 
-        if args.save_dir and (epoch + 1) % args.save_interval == 0: #save_interval = 1 then save each epoch
+        if dist.get_rank() == 0 and args.save_dir and (epoch + 1) % args.save_interval == 0: #save_interval = 1 then save each epoch
             #eval_interval = 1 then evaluate each epoch
             log_rank("Evaluating before saving model...")
             eval_loss, eval_accu, eval_precision, eval_recall = evaluate(args, tokenizer, model.module.student_model, dataset["dev"], "dev", device)
+            print('==REMOVEME eval_loss, eval_accu, eval_precision, eval_recall', eval_loss, eval_accu, eval_precision, eval_recall)
             if "test" in dataset: #evaluate for test, no affect
                 _, _, _, _ = evaluate(args, tokenizer, model.module.student_model, dataset["test"], "test", device)
+            
+            
             ckpt_name = "epoch{}_step{}_loss{:.4f}".format(epoch + 1, logging_output["global_step"], eval_loss)
             save_dir_path = os.path.join(args.save_dir, ckpt_name)
             
-            if dist.get_rank() == 0:
-                os.makedirs(save_dir_path, exist_ok=True)
-                if not args.only_save_projector:
-                    log_rank("Saving tokenizer...")
-                    tokenizer.save_pretrained(save_dir_path)
-                    log_rank("Saving model...")
-                    model.module.student_model.save_pretrained(save_dir_path, safe_serialization=False)
-                    classifier_path = os.path.join(save_dir_path, "classifier_head.bin")
-                    if hasattr(model.module.student_model, 'score'):  # Mistral model
-                        log_rank("Saving Mistral classifier head (score)...")
-                        torch.save(model.module.student_model.score.state_dict(), classifier_path)
-                    elif hasattr(model.module.student_model, 'classifier'):  # BERT model
-                        log_rank("Saving BERT classifier head (classifier)...")
-                        torch.save(model.module.student_model.classifier.state_dict(), classifier_path)
-                    else:
-                        log_rank("Warning: Could not identify classifier head structure, no classifier saved.")
-                    log_rank("Saving config")
-                    model.module.student_model.config.save_pretrained(save_dir_path)
-                if hasattr(model.module, "projectors"):
-                    log_rank("Saving projector...")
-                    torch.save(
-                        model.module.projectors.state_dict(), 
-                        os.path.join(save_dir_path, "projector.pt")
-                    )
-                
-                model_list.append({"path": save_dir_path, "score": eval_accu}) #store model list in term of eval_loss
-                model_list = sorted(model_list, key=lambda x: x["score"], reverse=False)
-                
-                if len(model_list) > args.keep_best_n_checkpoints:
-                    removed_model = model_list.pop(0)
-                    shutil.rmtree(removed_model["path"])
+            os.makedirs(save_dir_path, exist_ok=True)
+            if not args.only_save_projector:
+                log_rank("Saving tokenizer...")
+                tokenizer.save_pretrained(save_dir_path)
+                log_rank("Saving model...")
+                model.module.student_model.save_pretrained(save_dir_path, safe_serialization=False)
+                classifier_path = os.path.join(save_dir_path, "classifier_head.bin")
+                if hasattr(model.module.student_model, 'score'):  # Mistral model
+                    log_rank("Saving Mistral classifier head (score)...")
+                    torch.save(model.module.student_model.score.state_dict(), classifier_path)
+                elif hasattr(model.module.student_model, 'classifier'):  # BERT model
+                    log_rank("Saving BERT classifier head (classifier)...")
+                    torch.save(model.module.student_model.classifier.state_dict(), classifier_path)
+                else:
+                    log_rank("Warning: Could not identify classifier head structure, no classifier saved.")
+                log_rank("Saving config")
+                model.module.student_model.config.save_pretrained(save_dir_path)
+            if hasattr(model.module, "projectors"):
+                log_rank("Saving projector...")
+                torch.save(
+                    model.module.projectors.state_dict(), 
+                    os.path.join(save_dir_path, "projector.pt")
+                )
+            
+            model_list.append({"path": save_dir_path, "score": eval_accu}) #store model list in term of eval_loss
+            model_list = sorted(model_list, key=lambda x: x["score"], reverse=False)
+            
+            if len(model_list) > args.keep_best_n_checkpoints:
+                removed_model = model_list.pop(0)
+                shutil.rmtree(removed_model["path"])
 
-                log_rank(f"Model has been saved to {save_dir_path}")
-            dist.barrier()
+            log_rank(f"Model has been saved to {save_dir_path}")
+        
+        dist.barrier()
             
     total_seconds = time.time() - start_time
     log_rank("Done training in {:0>2}:{:0>2}:{:0>2}".format(
@@ -283,6 +286,7 @@ def evaluate(args, tokenizer, student_model, dataset, split, device):
 
     student_model.train()
 
+    print(eval_info["loss"], eval_info["accuracy"], eval_info.get("precision", 0.0), eval_info.get("recall", 0.0))
     return eval_info["loss"], eval_info["accuracy"], eval_info.get("precision", 0.0), eval_info.get("recall", 0.0)
 
 def main():
@@ -346,7 +350,7 @@ def main():
         finetune(args, distiller.student_tokenizer, model_engine, optimizer, lr_scheduler, dataset, device)
        
     if args.do_eval:
-        evaluate(args, distiller.student_tokenizer, model_engine.module.student_model, dataset["test"], "test", device)
+        evaluate(args, distiller.student_tokenizer, model_engine.module.student_model, dataset["dev"], "dev", device)
         
     
 if __name__ == "__main__":

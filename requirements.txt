@@ -6,4 +6,3 @@ peft==0.15.1
 editdistance==0.8.1
 pandas
 llm2vec
-peft==0.14.0

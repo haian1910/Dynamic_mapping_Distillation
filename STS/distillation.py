@@ -143,6 +143,14 @@ def finetune(args, tokenizer: AutoTokenizer, model: deepspeed.DeepSpeedEngine, o
 
             
             model.backward(loss)
+
+            grad_norm = torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+
+            if grad_norm == 0 or torch.isnan(grad_norm):
+                print(f"⚠️ Grad norm = {grad_norm}, skipping step.")
+                model.zero_grad()
+                continue
+
             model.step()
             torch.cuda.synchronize()  # correctly compute time
 
