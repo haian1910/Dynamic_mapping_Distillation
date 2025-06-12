@@ -87,7 +87,7 @@ class MIN_CKA(VariousDivergence):
         tea_k_hiddens = teacher_outputs.hidden_states[-1].float() / teacher_outputs.hidden_states[-1].std()
 
         # Define the layers to process
-        student_layers_to_process = [2, 7, 11]
+        student_layers_to_process = [6, 11]
         
         # Find best matching layers and compute CKA loss directly
         total_cka_loss = 0
@@ -105,15 +105,15 @@ class MIN_CKA(VariousDivergence):
                 )
                 cka_similarity = cka_loss_fn(t2s_hiddens, outputs.hidden_states[k])
                 pair_cka_loss = 1 - math.sqrt(cka_similarity)
-                
+                print("layer 11: ", pair_cka_loss)
                 total_cka_loss += pair_cka_loss
                 num_pairs += 1
             else:
                 weight = []
                 align_matrix = []
                 # Find best matching teacher layer
-                # index_list = [3*k-2, 3*k-1, 3*k, 3*k+1, 3*k+2]
-                index_list = [3*k]
+                index_list = [3*k-2, 3*k-1, 3*k, 3*k+1, 3*k+2]
+                # index_list = [3*k]
                 best_cka_loss = float('inf')
                 
                 for l in index_list:
@@ -133,6 +133,7 @@ class MIN_CKA(VariousDivergence):
                 weight_norm = [w / sum(weight) for w in weight]
                 weighted_sum_matrix = sum(w * a for w, a in zip(weight_norm, align_matrix))
                 pair_cka_loss = 1 - math.sqrt(cka_loss_fn(weighted_sum_matrix, outputs.hidden_states[k]))
+                print("layer 6: ", pair_cka_loss)
                 total_cka_loss += pair_cka_loss
                 num_pairs += 1
         # Convert logging values to tensors
