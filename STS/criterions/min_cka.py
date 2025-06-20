@@ -100,7 +100,8 @@ class MIN_CKA(STSLoss):
                 weight = []
                 align_matrix = []
                 # Find best matching teacher layer
-                index_list = [3*k-2, 3*k-1, 3*k, 3*k+1, 3*k+2]
+                # index_list = [3*k-2, 3*k-1, 3*k, 3*k+1, 3*k+2]
+                index_list = [3*k-1, 3*k, 3*k+1]
                 best_cka_loss = float('inf')
                 
                 for l in index_list:
