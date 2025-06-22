@@ -1,5 +1,4 @@
 #! /bin/bash
-GPUS=(0 1 2 3 4 5 6 7)
 GPUS=(0)
 export CUDA_VISIBLE_DEVICES=$(IFS=,; echo "${GPUS[*]}")
 
@@ -20,33 +19,32 @@ BASE_PATH=/mnt/bn/magellan-product-audit/tu.vu/matrixone/Dynamic_mapping_Distill
 CKPT_NAME="bert"
 CKPT_PATH="${BASE_PATH}/model_hub/${CKPT_NAME}"
 TEACHER_MODEL_NAME="LLM2Vec"
-TEACHER_MODEL_PATH="/mnt/bn/magellan-product-audit/tu.vu/matrixone/LLM2Vec_Distillation/outputs/LLM2Vec/sft/control/criterion=cross_entropy__lora-rank=256-alpha=16-dropout=0.1-bf16__epoch=3__bsz=4x1x1=4__lr=0.00001/epoch3_step5040_loss0.3079"
+TEACHER_MODEL_PATH="/mnt/bn/magellan-product-audit/tu.vu/matrixone/Dynamic_mapping_Distillation/outputs/LLM2Vec/nfcorpus/sft/criterion=multiple_negatives_ranking_loss__lora-rank=256-alpha=16-dropout=0.1-bf16__epoch=1__bsz=8x1x1=8__lr=0.00001/epoch1_step13823_mrr_0.4363_map0.3189_ndcg0.3039" 
 # data
-DATASET=control
-DATA_DIR="${BASE_PATH}/data/${DATASET}"
-NUM_LABELS=3
+DATASET="nfcorpus"
+DATA_DIR="${BASE_PATH}/data/${DATASET}/"
 # task
-TASK="min_cka"
+TASK="dual_space_kd_with_cross_model_attention"
 # hp
-BATCH_SIZE=4
+BATCH_SIZE=8
 LR=0.00001
 GRAD_ACC=1
-EVAL_BATCH_SIZE=4
-EPOCH=5
+EVAL_BATCH_SIZE=8
+EPOCH=3
 KD_RATE=0.5
 KD_TEMP=2.0
 # length
-MAX_LENGTH=512
+MAX_LENGTH=128
 # distiller
 PROJECTOR_CONFIG_PATH="${BASE_PATH}/configs/projector_config.json"
 PROJECTOR_LR=0.001
 # runtime
 PRECISION="bf16"
-CRITERION="min_cka"
+CRITERION="dual_space_kd_with_cross_model_attention"
 KD_OBJ="forward_kl"  # [forward_kl, reverse_kl, js_divergence, skewed_forward_kl, skewed_reverse_kl, adaptive_kl]
 CONFIG="${KD_OBJ}"
 SETTING=criterion=${CRITERION}__${CONFIG}__teacher=${KD_RATE}__kd^temp=${KD_TEMP}__tea^temp=${TEA_TEMP}__epoch=${EPOCH}__bsz=${BATCH_SIZE}x${GRAD_ACC}x${GPUS_PER_NODE}=$((BATCH_SIZE * GRAD_ACC * GPUS_PER_NODE * NNODES))__lr=${LR}
-SAVE_PATH="${BASE_PATH}/outputs/${CKPT_NAME}/${DATASET}/${TASK}/${SETTING}"
+SAVE_PATH="${BASE_PATH}/outputs/${CKPT_NAME}/${TASK}/${DATASET}/${SETTING}"
 SAVE_BEST_N_CKPTS=1
 # seed
 SEED=10
@@ -66,7 +64,6 @@ OPTS+=" --gradient-checkpointing"
 OPTS+=" --data-dir ${DATA_DIR}"
 OPTS+=" --num-workers 0"
 OPTS+=" --dev-num 1000"
-OPTS+=" --num-labels ${NUM_LABELS}"
 # task
 OPTS+=" --task ${TASK}"
 # hp
@@ -104,13 +101,14 @@ OPTS+=" --seed ${SEED}"
 OPTS+=" --deepspeed"
 OPTS+=" --deepspeed_config ${BASE_PATH}/configs/deepspeed/ds_config_test.json"
 
+
+
 export NCCL_DEBUG=""
 export WANDB_DISABLED=True
 export TF_CPP_MIN_LOG_LEVEL=3
 export PYTHONPATH=${BASE_PATH}
-CMD="torchrun ${DISTRIBUTED_ARGS} ${BASE_PATH}/SentencePair/distillation.py ${OPTS}"
+CMD="torchrun ${DISTRIBUTED_ARGS} ${BASE_PATH}/STS/distillation.py ${OPTS}"
 
 echo ${CMD}
-# $CMD
 echo ${SAVE_PATH}/train.log
-${CMD} >> ${SAVE_PATH}/train.log 2>&1
+${CMD} # >> ${SAVE_PATH}/train.log 2>&1

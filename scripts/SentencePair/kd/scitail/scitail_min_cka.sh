@@ -1,5 +1,5 @@
 #! /bin/bash
-GPUS=(0 1 2 3 4 5 6 7)
+GPUS=(0)
 export CUDA_VISIBLE_DEVICES=$(IFS=,; echo "${GPUS[*]}")
 
 MASTER_ADDR=localhost
@@ -26,10 +26,10 @@ NUM_LABELS=2
 # task
 TASK="min_cka"
 # hp
-BATCH_SIZE=4
+BATCH_SIZE=8
 LR=0.00001
 GRAD_ACC=1
-EVAL_BATCH_SIZE=4
+EVAL_BATCH_SIZE=8
 EPOCH=5
 KD_RATE=0.5
 KD_TEMP=2.0
@@ -111,4 +111,4 @@ CMD="torchrun ${DISTRIBUTED_ARGS} ${BASE_PATH}/SentencePair/distillation.py ${OP
 echo ${CMD}
 # $CMD
 echo ${SAVE_PATH}/train.log
-${CMD} >> ${SAVE_PATH}/train.log
+${CMD} >> ${SAVE_PATH}/train.log 2>&1
