@@ -87,7 +87,7 @@ class MIN_CKA(VariousDivergence):
         tea_k_hiddens = teacher_outputs.hidden_states[-1].float() / teacher_outputs.hidden_states[-1].std()
 
         # Define the layers to process
-        student_layers_to_process = [6, 11]
+        student_layers_to_process = [2,5,8,11]
         
         # Find best matching layers and compute CKA loss directly
         total_cka_loss = 0
