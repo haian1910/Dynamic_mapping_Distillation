@@ -1,5 +1,5 @@
 #! /bin/bash
-GPUS=(0 1 2 3 4 5 6 7)
+GPUS=(0 1 2 3 4 5)
 GPUS=(0)
 export CUDA_VISIBLE_DEVICES=$(IFS=,; echo "${GPUS[*]}")
 
@@ -19,34 +19,25 @@ DISTRIBUTED_ARGS="--nproc_per_node $GPUS_PER_NODE \
 BASE_PATH=/mnt/bn/magellan-product-audit/tu.vu/matrixone/Dynamic_mapping_Distillation
 CKPT_NAME="bert"
 CKPT_PATH="${BASE_PATH}/model_hub/${CKPT_NAME}"
-TEACHER_MODEL_NAME="LLM2Vec"
-TEACHER_MODEL_PATH="/mnt/bn/magellan-product-audit/tu.vu/matrixone/LLM2Vec_Distillation/outputs/LLM2Vec/sft/control/criterion=cross_entropy__lora-rank=256-alpha=16-dropout=0.1-bf16__epoch=3__bsz=4x1x1=4__lr=0.00001/epoch3_step5040_loss0.3079"
 # data
-DATASET=control
-DATA_DIR="${BASE_PATH}/data/${DATASET}"
-NUM_LABELS=3
+DATA_DIR="${BASE_PATH}/data/nfcorpus/"
+NUM_LABELS=1
 # task
-TASK="min_cka"
+TASK="sft"
 # hp
-BATCH_SIZE=4
+BATCH_SIZE=16
 LR=0.00001
 GRAD_ACC=1
-EVAL_BATCH_SIZE=4
+EVAL_BATCH_SIZE=16
 EPOCH=5
-KD_RATE=0.5
-KD_TEMP=2.0
 # length
-MAX_LENGTH=512
-# distiller
-PROJECTOR_CONFIG_PATH="${BASE_PATH}/configs/projector_config.json"
-PROJECTOR_LR=0.001
+MAX_LENGTH=128
 # runtime
 PRECISION="bf16"
-CRITERION="min_cka"
-KD_OBJ="forward_kl"  # [forward_kl, reverse_kl, js_divergence, skewed_forward_kl, skewed_reverse_kl, adaptive_kl]
-CONFIG="${KD_OBJ}"
-SETTING=criterion=${CRITERION}__${CONFIG}__teacher=${KD_RATE}__kd^temp=${KD_TEMP}__tea^temp=${TEA_TEMP}__epoch=${EPOCH}__bsz=${BATCH_SIZE}x${GRAD_ACC}x${GPUS_PER_NODE}=$((BATCH_SIZE * GRAD_ACC * GPUS_PER_NODE * NNODES))__lr=${LR}
-SAVE_PATH="${BASE_PATH}/outputs/${CKPT_NAME}/${DATASET}/${TASK}/${SETTING}"
+CRITERION="multiple_negatives_ranking_loss"
+CONFIG="default-${PRECISION}"
+SETTING=criterion=${CRITERION}__${CONFIG}__epoch=${EPOCH}__bsz=${BATCH_SIZE}x${GRAD_ACC}x${GPUS_PER_NODE}=$((BATCH_SIZE * GRAD_ACC * GPUS_PER_NODE * NNODES))__lr=${LR}
+SAVE_PATH="${BASE_PATH}/outputs/${CKPT_NAME}/${TASK}/${SETTING}"
 SAVE_BEST_N_CKPTS=1
 # seed
 SEED=10
@@ -56,12 +47,9 @@ mkdir -p ${SAVE_PATH}
 OPTS=""
 # model
 OPTS+=" --base-path ${BASE_PATH}"
-OPTS+=" --ckpt-name ${CKPT_NAME}"
 OPTS+=" --model-path ${CKPT_PATH}"
 OPTS+=" --n-gpu ${GPUS_PER_NODE}"
-OPTS+=" --teacher-model-path ${TEACHER_MODEL_PATH}"
-OPTS+=" --teacher-model-fp16"
-OPTS+=" --gradient-checkpointing"
+# OPTS+=" --gradient-checkpointing"
 # data
 OPTS+=" --data-dir ${DATA_DIR}"
 OPTS+=" --num-workers 0"
@@ -79,13 +67,6 @@ OPTS+=" --lr-decay-style cosine"
 OPTS+=" --weight-decay 1e-2"
 OPTS+=" --clip-grad 1.0"
 OPTS+=" --num-epochs ${EPOCH}"
-OPTS+=" --kd-rate ${KD_RATE}"
-OPTS+=" --kd-temperature ${KD_TEMP}"
-OPTS+=" --kd-objective ${KD_OBJ}"
-# distiller
-OPTS+=" --projector-lr ${PROJECTOR_LR}"
-OPTS+=" --projector-config-path ${PROJECTOR_CONFIG_PATH}"
-# OPTS+=" --projector-path ${PROJECTOR_PATH}"
 # length
 OPTS+=" --max-length ${MAX_LENGTH}"
 OPTS+=" --max-prompt-length 256"
@@ -108,9 +89,9 @@ export NCCL_DEBUG=""
 export WANDB_DISABLED=True
 export TF_CPP_MIN_LOG_LEVEL=3
 export PYTHONPATH=${BASE_PATH}
-CMD="torchrun ${DISTRIBUTED_ARGS} ${BASE_PATH}/SentencePair/distillation.py ${OPTS}"
+CMD="torchrun ${DISTRIBUTED_ARGS} ${BASE_PATH}/IR/distillation.py ${OPTS}"
 
-echo ${CMD}
-# $CMD
-echo ${SAVE_PATH}/train.log
-${CMD} >> ${SAVE_PATH}/train.log 2>&1
+${CMD}
+# ${CMD} \
+# >> ${SAVE_PATH}/train.log 2>&1 &
+# echo "Training started, logs are being saved to ${SAVE_PATH}/train.log"
