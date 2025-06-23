@@ -24,7 +24,7 @@ class UniversalLogitDistillation(MultipleNegativesRankingLoss):
         student_model = distiller.student_model
         teacher_model = distiller.teacher_model
         student_tokenizer = distiller.student_tokenizer
-        teacher_tokenizer = distiller.teacher_tokenizer
+        teacher_tokenizer = distiller.teacher_tokenizers
         
         log = {}
         
@@ -112,12 +112,19 @@ class UniversalLogitDistillation(MultipleNegativesRankingLoss):
 
     def get_teacher_embeddings(self, anchors, positives, teacher_model, teacher_tokenizer):
         """Get embeddings from teacher model"""
-        # Assuming teacher uses similar architecture, adapt as needed
+        # Ensure teacher model is on the correct device
+        device = next(teacher_model.parameters()).device
+        
+        # If teacher model is on CPU, move it to GPU
+        if device.type == 'cpu' and torch.cuda.is_available():
+            teacher_model = teacher_model.cuda()
+            device = next(teacher_model.parameters()).device
+        
         # Anchor embeddings
         anchor_inputs = teacher_tokenizer(
             anchors, padding=True, truncation=True, 
             return_tensors="pt", max_length=self.args.max_length
-        ).to(teacher_model.device)
+        ).to(device)
         
         outputs = teacher_model(**anchor_inputs)
         
@@ -133,7 +140,7 @@ class UniversalLogitDistillation(MultipleNegativesRankingLoss):
         positives_inputs = teacher_tokenizer(
             positives, padding=True, truncation=True, 
             return_tensors="pt", max_length=self.args.max_length
-        ).to(teacher_model.device)
+        ).to(device)
         
         outputs = teacher_model(**positives_inputs)
         
@@ -179,6 +186,11 @@ class UniversalLogitDistillation(MultipleNegativesRankingLoss):
         Compute Universal Logit Distillation loss for IR task.
         Instead of using logits, we use similarity scores between embeddings.
         """
+        # Ensure all embeddings are on the same device
+        device = student_emb_anchor.device
+        teacher_emb_anchor = teacher_emb_anchor.to(device)
+        teacher_emb_pos = teacher_emb_pos.to(device)
+        
         # Compute similarity matrices (these act as our "logits" for IR)
         student_scores = torch.matmul(student_emb_anchor, student_emb_pos.T) * self.scale  # [B, B]
         teacher_scores = torch.matmul(teacher_emb_anchor, teacher_emb_pos.T) * self.scale  # [B, B]
