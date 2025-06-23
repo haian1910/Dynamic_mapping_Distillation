@@ -26,11 +26,11 @@ DATA_DIR="${BASE_PATH}/data/${DATASET}/"
 # task
 TASK="dual_space_kd_with_cross_model_attention"
 # hp
-BATCH_SIZE=8
+BATCH_SIZE=16
 LR=0.00001
 GRAD_ACC=1
-EVAL_BATCH_SIZE=8
-EPOCH=3
+EVAL_BATCH_SIZE=16
+EPOCH=5
 KD_RATE=0.5
 KD_TEMP=2.0
 # length
