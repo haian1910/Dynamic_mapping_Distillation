@@ -148,7 +148,7 @@ class MIN_CKA(MultipleNegativesRankingLoss):
         device = next(distiller.student_model.parameters()).device
         
         # Combine anchor and positive outputs for processing
-        # We'll process them together to maintain the dual-encoder structure
+        # Process them together to maintain the dual-encoder structure
         student_outputs = self.combine_outputs(student_anchor_outputs, student_positive_outputs)
         teacher_outputs = self.combine_outputs(teacher_anchor_outputs, teacher_positive_outputs)
         
