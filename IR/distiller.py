@@ -18,9 +18,8 @@ from STS.utils import log_rank
 from huggingface_hub import login
 
 import os
-#token = os.getenv("HF_TOKEN")
-#login(token=token)
-login(token="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")
+token = os.getenv("HF_TOKEN")
+login(token=token)
 
 
 class STSModel(nn.Module):
