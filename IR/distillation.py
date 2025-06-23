@@ -173,78 +173,81 @@ def finetune(args, tokenizer: AutoTokenizer, model: deepspeed.DeepSpeedEngine, o
                 data_iter.set_postfix(loss=loss.item())
 
 
-        #     if args.save_dir and logging_output["global_step"]%1000 == 0 and dist.get_rank() == 0: #save_interval = 1 then save each epoch
-        # # if args.save_dir and (epoch+1)%args.save_interval == 0 and dist.get_rank() == 0: #save_interval = 1 then save each epoch
-        #     #eval_interval = 1 then evaluate each epoch
-        #         log_rank(f"Evaluating before saving model... epoch {epoch} step {logging_output['global_step']}")
-        #         eval_mrr, eval_ndcg, eval_map = evaluate(args, tokenizer, model.module.student_model, dataset["dev"], "dev", device)
-        #         # if "test" in dataset: #evaluate for test, no affect
-        #         #     _, _, _ = evaluate(args, tokenizer, model.module.student_model, dataset["test"], "test", device)
-        #         ckpt_name = f"epoch{epoch + 1}_step{logging_output['global_step']}_mrr_{eval_mrr:.4f}_map{eval_map:.4f}_ndcg{eval_ndcg:.4f}"
-        #         save_dir_path = os.path.join(args.save_dir, ckpt_name)
-                
-        #         os.makedirs(save_dir_path, exist_ok=True)
-        #         if not args.only_save_projector:
-        #             log_rank("Saving tokenizer...")
-        #             tokenizer.save_pretrained(save_dir_path)
-        #             log_rank("Saving model...")
-        #             model.module.student_model.save_pretrained(save_dir_path, safe_serialization=False)
-        #             log_rank("Saving config")
-        #             model.module.student_model.config.save_pretrained(save_dir_path)
-                
-        #         if hasattr(model.module, "projectors"):
-        #             log_rank("Saving projector...")
-        #             torch.save(
-        #                 model.module.projectors.state_dict(), 
-        #                 os.path.join(save_dir_path, "projector.pt")
-        #             )
-                
-        #         # Use Pearson correlation as the primary metric for STS tasks
-        #         model_list.append({"path": save_dir_path, "score": eval_ndcg})
-        #         model_list = sorted(model_list, key=lambda x: x["score"], reverse=True)  # Higher is better
-                
-        #         if len(model_list) > args.keep_best_n_checkpoints:
-        #             removed_model = model_list.pop(-1)  # Remove worst model
-        #             shutil.rmtree(removed_model["path"])
+        if args.save_dir and (epoch+1)%args.save_interval == 0 and dist.get_rank() == 0: #save_interval = 1 then save each epoch
+            log_rank(f"Evaluating before saving model... epoch {epoch} step {logging_output['global_step']}")
+            eval_mrr, eval_ndcg, eval_map = evaluate(args, tokenizer, model.module.student_model, dataset["dev"], "dev", device)
+            if "test" in dataset: #evaluate for test, no affect
+                _, _, _ = evaluate(args, tokenizer, model.module.student_model, dataset["test"], "test", device)
+            ckpt_name = f"epoch{epoch + 1}_step{logging_output['global_step']}_mrr_{eval_mrr:.4f}_map{eval_map:.4f}_ndcg{eval_ndcg:.4f}"
+            save_dir_path = os.path.join(args.save_dir, ckpt_name)
+            
+            os.makedirs(save_dir_path, exist_ok=True)
+            if not args.only_save_projector:
+                log_rank("Saving tokenizer...")
+                tokenizer.save_pretrained(save_dir_path)
+                log_rank("Saving model...")
+                model.module.student_model.save_pretrained(save_dir_path, safe_serialization=False)
+                log_rank("Saving config")
+                model.module.student_model.config.save_pretrained(save_dir_path)
+            
+            if hasattr(model.module, "projectors"):
+                log_rank("Saving projector...")
+                torch.save(
+                    model.module.projectors.state_dict(), 
+                    os.path.join(save_dir_path, "projector.pt")
+                )
+            
+            # Use Pearson correlation as the primary metric for STS tasks
+            model_list.append({"path": save_dir_path, "score": eval_ndcg})
+            model_list = sorted(model_list, key=lambda x: x["score"], reverse=True)  # Higher is better
+            
+            if len(model_list) > args.keep_best_n_checkpoints:
+                removed_model = model_list.pop(-1)  # Remove worst model
+                shutil.rmtree(removed_model["path"])
 
-        #         log_rank(f"Model has been saved to {save_dir_path}")
+            log_rank(f"Model has been saved to {save_dir_path}")
         
-        # dist.barrier()
+            dist.barrier()
 
         # log_rank(f"Finally Evaluating before saving model... epoch {epoch} step {logging_output['global_step']}")
         # eval_mrr, eval_ndcg, eval_map = evaluate(args, tokenizer, model.module.student_model, dataset["dev"], "dev", device)
         # if "test" in dataset: #evaluate for test, no affect
         #     _, _, _ = evaluate(args, tokenizer, model.module.student_model, dataset["test"], "test", device)
         # ckpt_name = f"epoch{epoch + 1}_step{logging_output['global_step']}_mrr_{eval_mrr:.4f}_map{eval_map:.4f}_ndcg{eval_ndcg:.4f}"
-        ckpt_name = f"epoch{epoch + 1}_step{logging_output['global_step']}"
-        save_dir_path = os.path.join(args.save_dir, ckpt_name)
-        
-        os.makedirs(save_dir_path, exist_ok=True)
-        if not args.only_save_projector:
-            log_rank("Saving tokenizer...")
-            tokenizer.save_pretrained(save_dir_path)
-            log_rank("Saving model...")
-            model.module.student_model.save_pretrained(save_dir_path, safe_serialization=False)
-            log_rank("Saving config")
-            model.module.student_model.config.save_pretrained(save_dir_path)
-        
-        if hasattr(model.module, "projectors"):
-            log_rank("Saving projector...")
-            torch.save(
-                model.module.projectors.state_dict(), 
-                os.path.join(save_dir_path, "projector.pt")
-            )
-        
-        # Use Pearson correlation as the primary metric for STS tasks
-        model_list.append({"path": save_dir_path, "score": eval_ndcg})
-        model_list = sorted(model_list, key=lambda x: x["score"], reverse=True)  # Higher is better
-        
-        if len(model_list) > args.keep_best_n_checkpoints:
-            removed_model = model_list.pop(-1)  # Remove worst model
-            shutil.rmtree(removed_model["path"])
 
-        log_rank(f"Model has been saved to {save_dir_path}")
-        # eval_mrr, eval_ndcg, eval_map = evaluate(args, tokenizer, model.module.student_model, dataset["test"], "test", device)
+
+
+
+
+        # ckpt_name = f"epoch{epoch + 1}_step{logging_output['global_step']}"
+        # save_dir_path = os.path.join(args.save_dir, ckpt_name)
+        
+        # os.makedirs(save_dir_path, exist_ok=True)
+        # if not args.only_save_projector:
+        #     log_rank("Saving tokenizer...")
+        #     tokenizer.save_pretrained(save_dir_path)
+        #     log_rank("Saving model...")
+        #     model.module.student_model.save_pretrained(save_dir_path, safe_serialization=False)
+        #     log_rank("Saving config")
+        #     model.module.student_model.config.save_pretrained(save_dir_path)
+        
+        # if hasattr(model.module, "projectors"):
+        #     log_rank("Saving projector...")
+        #     torch.save(
+        #         model.module.projectors.state_dict(), 
+        #         os.path.join(save_dir_path, "projector.pt")
+        #     )
+        
+        # # Use Pearson correlation as the primary metric for STS tasks
+        # model_list.append({"path": save_dir_path, "score": eval_ndcg})
+        # model_list = sorted(model_list, key=lambda x: x["score"], reverse=True)  # Higher is better
+        
+        # if len(model_list) > args.keep_best_n_checkpoints:
+        #     removed_model = model_list.pop(-1)  # Remove worst model
+        #     shutil.rmtree(removed_model["path"])
+
+        # log_rank(f"Model has been saved to {save_dir_path}")
+        # # eval_mrr, eval_ndcg, eval_map = evaluate(args, tokenizer, model.module.student_model, dataset["test"], "test", device)
 
     total_seconds = time.time() - start_time
     log_rank("Done training in {:0>2}:{:0>2}:{:0>2}".format(
