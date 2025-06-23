@@ -15,25 +15,26 @@ DISTRIBUTED_ARGS="--nproc_per_node $GPUS_PER_NODE \
                   --master_port $MASTER_PORT"
 
 # model
-BASE_PATH=/mnt/bn/magellan-product-audit/tu.vu/matrixone/Dynamic_mapping_Distillation
+BASE_PATH=/content/Dynamic_mapping_Distillation
 CKPT_NAME="bert"
 CKPT_PATH="${BASE_PATH}/model_hub/${CKPT_NAME}"
 TEACHER_MODEL_NAME="LLM2Vec"
-TEACHER_MODEL_PATH="/mnt/bn/magellan-product-audit/tu.vu/matrixone/Dynamic_mapping_Distillation/outputs/LLM2Vec/SICK/sft/criterion=sts_loss__lora-rank=256-alpha=16-dropout=0.1-bf16__epoch=10__bsz=4x1x1=4__lr=0.00001/epoch7_step7873_loss0.9858_pearson0.8734" # GẮN LINK MODEL CHECKPOINT VÀO ĐÂY
+TEACHER_MODEL_PATH="/content/Dynamic_mapping_Distillation/outputs/LLM2Vec/nfcorpus/sft/criterion=multiple_negatives_ranking_loss__lora-rank=2-alpha=1-dropout=0.1-bf16__epoch=1__bsz=4x1x1=4__lr=0.00001/epoch1_step8_mrr_0.0000_map0.0000_ndcg0.0000"
 # data
-DATASET=SICK
-DATA_DIR="${BASE_PATH}/data/${DATASET}" #task
+DATASET="nfcorpus"
+DATA_DIR="/content/drive/MyDrive/2MMath/data_distillation/IR/nfcorpus" #task
+# task
 TASK="min_cka"
 # hp
-BATCH_SIZE=2
+BATCH_SIZE=32
 LR=0.00001
 GRAD_ACC=1
-EVAL_BATCH_SIZE=2
-EPOCH=10
+EVAL_BATCH_SIZE=32
+EPOCH=5
 KD_RATE=0.5
 KD_TEMP=2.0
 # length
-MAX_LENGTH=128
+MAX_LENGTH=512
 # distiller
 PROJECTOR_CONFIG_PATH="${BASE_PATH}/configs/projector_config.json"
 PROJECTOR_LR=0.001
@@ -43,7 +44,7 @@ CRITERION="min_cka"
 KD_OBJ="forward_kl"  # [forward_kl, reverse_kl, js_divergence, skewed_forward_kl, skewed_reverse_kl, adaptive_kl]
 CONFIG="${KD_OBJ}"
 SETTING=criterion=${CRITERION}__${CONFIG}__teacher=${KD_RATE}__kd^temp=${KD_TEMP}__tea^temp=${TEA_TEMP}__epoch=${EPOCH}__bsz=${BATCH_SIZE}x${GRAD_ACC}x${GPUS_PER_NODE}=$((BATCH_SIZE * GRAD_ACC * GPUS_PER_NODE * NNODES))__lr=${LR}
-SAVE_PATH="${BASE_PATH}/outputs/${CKPT_NAME}/${DATASET}/${TASK}/${SETTING}"
+SAVE_PATH="${BASE_PATH}/outputs/${CKPT_NAME}/${TASK}/${DATASET}/${SETTING}"
 SAVE_BEST_N_CKPTS=1
 # seed
 SEED=10
@@ -106,9 +107,8 @@ export NCCL_DEBUG=""
 export WANDB_DISABLED=True
 export TF_CPP_MIN_LOG_LEVEL=3
 export PYTHONPATH=${BASE_PATH}
-CMD="torchrun ${DISTRIBUTED_ARGS} ${BASE_PATH}/STS/distillation.py ${OPTS}"
+CMD="torchrun ${DISTRIBUTED_ARGS} ${BASE_PATH}/IR/distillation.py ${OPTS}"
 
 echo ${CMD}
-# $CMD
 echo ${SAVE_PATH}/train.log
-${CMD} >> ${SAVE_PATH}/train.log 2>&1
+${CMD} # >> ${SAVE_PATH}/train.log 2>&1
