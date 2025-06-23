@@ -21,7 +21,6 @@ import torch.distributed as dist
 import os
 #token = os.getenv("HF_TOKEN")
 #login(token=token)
-login(token="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")
 
 
 class Distiller(nn.Module):
