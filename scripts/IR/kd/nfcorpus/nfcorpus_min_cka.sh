@@ -19,7 +19,7 @@ BASE_PATH=/content/Dynamic_mapping_Distillation
 CKPT_NAME="bert"
 CKPT_PATH="${BASE_PATH}/model_hub/${CKPT_NAME}"
 TEACHER_MODEL_NAME="LLM2Vec"
-TEACHER_MODEL_PATH="/content/Dynamic_mapping_Distillation/outputs/LLM2Vec/nfcorpus/sft/criterion=multiple_negatives_ranking_loss__lora-rank=2-alpha=1-dropout=0.1-bf16__epoch=1__bsz=4x1x1=4__lr=0.00001/epoch1_step8_mrr_0.0000_map0.0000_ndcg0.0000"
+TEACHER_MODEL_PATH="check point path"
 # data
 DATASET="nfcorpus"
 DATA_DIR="/content/drive/MyDrive/2MMath/data_distillation/IR/nfcorpus" #task
