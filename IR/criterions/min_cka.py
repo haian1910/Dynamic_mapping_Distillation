@@ -138,19 +138,38 @@ class MIN_CKA(MultipleNegativesRankingLoss):
         # Update logging output
         logging_output = self.record_logging_output(logging_output, batch_denom, log)
         return total_loss, {}
+       
     
     def compute_min_cka_loss(
-        self, 
-        student_anchor_outputs, student_positive_outputs,
-        teacher_anchor_outputs, teacher_positive_outputs, 
-        distiller, log
-    ):  
+    self, 
+      student_anchor_outputs, student_positive_outputs,
+      teacher_anchor_outputs, teacher_positive_outputs, 
+      distiller, log
+  ):  
+      device = next(distiller.student_model.parameters()).device
+      
+      # Process anchors and positives separately, then combine the losses
+      anchor_cka_loss = self.compute_cka_loss_for_output_pair(
+          student_anchor_outputs, teacher_anchor_outputs, distiller
+      )
+      
+      positive_cka_loss = self.compute_cka_loss_for_output_pair(
+          student_positive_outputs, teacher_positive_outputs, distiller
+      )
+      
+      # Average the losses from both query and document sides
+      total_cka_loss = (anchor_cka_loss + positive_cka_loss) / 2.0
+      
+      # Convert logging values to tensors
+      log["min_cka_loss"] = total_cka_loss
+      log["anchor_cka_loss"] = anchor_cka_loss
+      log["positive_cka_loss"] = positive_cka_loss
+      
+      return total_cka_loss, log
+
+    def compute_cka_loss_for_output_pair(self, student_outputs, teacher_outputs, distiller):
+        """Compute CKA loss for a single student-teacher output pair"""
         device = next(distiller.student_model.parameters()).device
-        
-        # Combine anchor and positive outputs for processing
-        # Process them together to maintain the dual-encoder structure
-        student_outputs = self.combine_outputs(student_anchor_outputs, student_positive_outputs)
-        teacher_outputs = self.combine_outputs(teacher_anchor_outputs, teacher_positive_outputs)
         
         # Project student embeddings to query space
         stu_q_hiddens = distiller.projectors["query"](student_outputs.hidden_states[-1]).float()
@@ -172,7 +191,7 @@ class MIN_CKA(MultipleNegativesRankingLoss):
                 # Fixed mapping for the last layer
                 best_teacher_layer = len(teacher_outputs.hidden_states) - 1
                 # Compute CKA loss for fixed mapping
-                t2s_hiddens = self.compute_align_matrix_layer_k(
+                t2s_hiddens = self.compute_align_matrix_layer_k_single(
                     k, best_teacher_layer, student_outputs, teacher_outputs, stu_q_hiddens, tea_k_hiddens
                 )
                 cka_similarity = cka_loss_fn(t2s_hiddens, student_outputs.hidden_states[k])
@@ -187,15 +206,15 @@ class MIN_CKA(MultipleNegativesRankingLoss):
                 ratio = len(teacher_outputs.hidden_states) // len(student_outputs.hidden_states)
                 center = k * ratio
                 index_list = [max(0, center-2), max(0, center-1), center, 
-                             min(len(teacher_outputs.hidden_states)-1, center+1), 
-                             min(len(teacher_outputs.hidden_states)-1, center+2)]
+                            min(len(teacher_outputs.hidden_states)-1, center+1), 
+                            min(len(teacher_outputs.hidden_states)-1, center+2)]
                 
                 for l in index_list:
                     if l >= len(teacher_outputs.hidden_states):
                         continue
                     
                     # Compute aligned hidden states
-                    t2s_hiddens = self.compute_align_matrix_layer_k(
+                    t2s_hiddens = self.compute_align_matrix_layer_k_single(
                         k, l, student_outputs, teacher_outputs, stu_q_hiddens, tea_k_hiddens
                     )
                     align_matrix.append(t2s_hiddens)
@@ -204,43 +223,16 @@ class MIN_CKA(MultipleNegativesRankingLoss):
                     cka_similarity = cka_loss_fn(t2s_hiddens, student_outputs.hidden_states[k])
                     weight.append(math.sqrt(cka_similarity))
 
-                if weight:  # Check if we have valid weights
                     weight_norm = [w / sum(weight) for w in weight]
                     weighted_sum_matrix = sum(w * a for w, a in zip(weight_norm, align_matrix))
                     pair_cka_loss = 1 - math.sqrt(cka_loss_fn(weighted_sum_matrix, student_outputs.hidden_states[k]))
                     total_cka_loss += pair_cka_loss
                     num_pairs += 1
         
-        # Convert logging values to tensors
-        log["min_cka_loss"] = total_cka_loss
-        log["num_layer_pairs"] = torch.tensor(num_pairs, device=device)
-        
-        return total_cka_loss, log
+        return total_cka_loss
 
-    def combine_outputs(self, anchor_outputs, positive_outputs):
-        """Combine anchor and positive outputs for dual-encoder processing"""
-        class CombinedOutputs:
-            def __init__(self, anchor_outputs, positive_outputs):
-                # Concatenate hidden states along batch dimension
-                self.hidden_states = []
-                for i in range(len(anchor_outputs.hidden_states)):
-                    combined_hidden = torch.cat([
-                        anchor_outputs.hidden_states[i],
-                        positive_outputs.hidden_states[i]
-                    ], dim=0)
-                    self.hidden_states.append(combined_hidden)
-                
-                # Also combine last_hidden_state if available
-                if hasattr(anchor_outputs, 'last_hidden_state') and hasattr(positive_outputs, 'last_hidden_state'):
-                    self.last_hidden_state = torch.cat([
-                        anchor_outputs.last_hidden_state,
-                        positive_outputs.last_hidden_state
-                    ], dim=0)
-        
-        return CombinedOutputs(anchor_outputs, positive_outputs)
-    
-    def compute_align_matrix_layer_k(self, k, l, student_outputs, teacher_outputs, stu_q_hiddens, tea_k_hiddens):
-        """Compute aligned hidden states for layer k (student) and layer l (teacher)"""
+    def compute_align_matrix_layer_k_single(self, k, l, student_outputs, teacher_outputs, stu_q_hiddens, tea_k_hiddens):
+        """Compute aligned hidden states for layer k (student) and layer l (teacher) - single output version"""
         stu_hiddens = student_outputs.hidden_states[k]
         tea_hiddens = teacher_outputs.hidden_states[l]
         
