@@ -5,6 +5,7 @@ from .ot_pro import OT_PRO
 from .ot_pro_rmse_cka import OT_PRO_RMSE_CKA
 from .min_cka import MIN_CKA
 from .multiple_negatives_ranking_loss import MultipleNegativesRankingLoss
+from .universal_logit_distillation import UniversalLogitDistillation
 
 criterion_list = {
     "sts_loss": STSLoss,
@@ -14,6 +15,7 @@ criterion_list = {
     "ot_pro_rmse_cka": OT_PRO_RMSE_CKA,
     "min_cka": MIN_CKA,
     "multiple_negatives_ranking_loss": MultipleNegativesRankingLoss,
+    "universal_logit_distillation": UniversalLogitDistillation
 }
 
 def build_criterion(args):
