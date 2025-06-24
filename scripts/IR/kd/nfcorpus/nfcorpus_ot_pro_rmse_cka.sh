@@ -15,25 +15,24 @@ DISTRIBUTED_ARGS="--nproc_per_node $GPUS_PER_NODE \
                   --master_port $MASTER_PORT"
 
 # model
-BASE_PATH=/LLM2Vec_Distillation
+BASE_PATH=/content/Dynamic_mapping_Distillation
 CKPT_NAME="bert"
 CKPT_PATH="${BASE_PATH}/model_hub/${CKPT_NAME}"
 TEACHER_MODEL_NAME="LLM2Vec"
-TEACHER_MODEL_PATH="${BASE_PATH}/model_hub/${TEACHER_MODEL_NAME}" # GẮN LINK MODEL CHECKPOINT VÀO ĐÂY
-# data
-DATA_DIR="${BASE_PATH}/data/SICK/"
+TEACHER_MODEL_PATH="check point model"
+DATA_DIR="/content/drive/MyDrive/2MMath/data_distillation/llm2vec_distill/nfcorpus"
 # task
 TASK="ot_pro_rmse_cka"
 # hp
-BATCH_SIZE=2
+BATCH_SIZE=16
 LR=0.00001
 GRAD_ACC=1
-EVAL_BATCH_SIZE=2
-EPOCH=1
+EVAL_BATCH_SIZE=16
+EPOCH=5
 KD_RATE=0.5
 KD_TEMP=2.0
 # length
-MAX_LENGTH=128
+MAX_LENGTH=512
 # distiller
 PROJECTOR_CONFIG_PATH="${BASE_PATH}/configs/projector_config.json"
 PROJECTOR_LR=0.001
@@ -106,7 +105,7 @@ export NCCL_DEBUG=""
 export WANDB_DISABLED=True
 export TF_CPP_MIN_LOG_LEVEL=3
 export PYTHONPATH=${BASE_PATH}
-CMD="torchrun ${DISTRIBUTED_ARGS} ${BASE_PATH}/STS/distillation.py ${OPTS}"
+CMD="torchrun ${DISTRIBUTED_ARGS} ${BASE_PATH}/IR/distillation.py ${OPTS}"
 
-${CMD} \
->> ${SAVE_PATH}/train.log 2>&1 &
+echo ${CMD}
+${CMD}
