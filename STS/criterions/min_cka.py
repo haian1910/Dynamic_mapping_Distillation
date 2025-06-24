@@ -92,7 +92,7 @@ class MIN_CKA(STSLoss):
                     k, best_teacher_layer, outputs, teacher_outputs, stu_q_hiddens, tea_k_hiddens
                 )
                 cka_similarity = cka_loss_fn(t2s_hiddens, outputs.hidden_states[k])
-                pair_cka_loss = 1 - math.sqrt(cka_similarity)
+                pair_cka_loss = 1 - cka_similarity
                 
                 total_cka_loss += pair_cka_loss
                 num_pairs += 1
@@ -117,11 +117,11 @@ class MIN_CKA(STSLoss):
                     
                     # Compute CKA loss (1 - CKA similarity)
                     cka_similarity = cka_loss_fn(t2s_hiddens, outputs.hidden_states[k])
-                    weight.append(math.sqrt(cka_similarity))
+                    weight.append(cka_similarity)
 
                 weight_norm = [w / sum(weight) for w in weight]
                 weighted_sum_matrix = sum(w * a for w, a in zip(weight_norm, align_matrix))
-                pair_cka_loss = 1 - math.sqrt(cka_loss_fn(weighted_sum_matrix, outputs.hidden_states[k]))
+                pair_cka_loss = 1 - cka_loss_fn(weighted_sum_matrix, outputs.hidden_states[k])
                 total_cka_loss += pair_cka_loss
                 num_pairs += 1
         # Convert logging values to tensors
