@@ -107,5 +107,6 @@ export TF_CPP_MIN_LOG_LEVEL=3
 export PYTHONPATH=${BASE_PATH}
 CMD="torchrun ${DISTRIBUTED_ARGS} ${BASE_PATH}/IR/distillation.py ${OPTS}"
 
-echo ${CMD}
-${CMD}
+
+${CMD} \
+>> ${SAVE_PATH}/train.log 2>&1 &
