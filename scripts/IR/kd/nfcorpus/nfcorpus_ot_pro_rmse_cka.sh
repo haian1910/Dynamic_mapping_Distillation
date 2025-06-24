@@ -1,5 +1,5 @@
 #! /bin/bash
-GPUS=(0, 1, 2, 3, 4, 5, 6, 7, 8)
+GPUS=(0)
 export CUDA_VISIBLE_DEVICES=$(IFS=,; echo "${GPUS[*]}")
 
 MASTER_ADDR=localhost
@@ -29,7 +29,7 @@ BATCH_SIZE=2
 LR=0.00001
 GRAD_ACC=1
 EVAL_BATCH_SIZE=2
-EPOCH=5
+EPOCH=1
 KD_RATE=0.5
 KD_TEMP=2.0
 # length
