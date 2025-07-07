@@ -87,7 +87,7 @@ class MIN_CKA(VariousDivergence):
         tea_k_hiddens = teacher_outputs.hidden_states[-1].float() / teacher_outputs.hidden_states[-1].std()
 
         # Define the layers to process
-        student_layers_to_process = [7, 9, 11]
+        student_layers_to_process = [2, 7, 11]
         
         # Find best matching layers and compute CKA loss directly
         total_cka_loss = 0
@@ -98,7 +98,7 @@ class MIN_CKA(VariousDivergence):
         for k in student_layers_to_process:
             if k == 11:
                 # Fixed mapping for the last layer
-                best_teacher_layer = 23
+                best_teacher_layer = 27
                 # Compute CKA loss for fixed mapping
                 t2s_hiddens = self.compute_align_matrix_layer_k(
                     k, best_teacher_layer, outputs, teacher_outputs, stu_q_hiddens, tea_k_hiddens
