@@ -77,10 +77,6 @@ class MIN_CKA(VariousDivergence):
 
         # Normalize teacher embeddings
         norm_tea_index_embeds = tea_input_embeds / tea_input_embeds.std()
-        
-        # Project student embeddings to query space
-        # stu_q_hiddens = distiller.projectors["query"](stu_input_embeds).float()
-        # tea_k_hiddens = norm_tea_index_embeds.float()
 
         # Use the last hidden states from the outputs instead of input embeddings
         stu_q_hiddens = distiller.projectors["query"](outputs.hidden_states[-1]).float()

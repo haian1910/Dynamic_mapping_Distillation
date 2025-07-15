@@ -33,8 +33,8 @@ class OT_PRO_RMSE_CKA(CrossEntropyLoss):
 
         # Bản đồ token đặc biệt
         TOKENIZER_TO_SPECIAL_TOKEN = {
-            type(tokenizer_teacher): "<s>",  # Token đặc biệt của teacher
-            type(tokenizer_student): "[CLS]"   # Token đặc biệt của student
+            type(tokenizer_teacher): "<s>", 
+            type(tokenizer_student): "[CLS]"  
         }
         # Student forward pass
         outputs = model(

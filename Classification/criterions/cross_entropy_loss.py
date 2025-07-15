@@ -36,14 +36,10 @@ class CrossEntropyLoss(nn.Module):
         return loss, logging_output
 
     def compute_cross_entropy_loss(self, logits, target):
-        # Tính log softmax trên chiều lớp
         lprobs = torch.log_softmax(logits, dim=-1, dtype=torch.float32)
-        
-        # Tính negative log likelihood loss
         nll_loss = -lprobs.gather(dim=-1, index=target.unsqueeze(-1)).squeeze(-1).mean()
         
         if self.label_smoothing > 0:
-            # Tính mất mát mịn (smooth loss)
             smooth_loss = -lprobs.mean(dim=-1).mean()
             loss = (1 - self.label_smoothing) * nll_loss + self.label_smoothing * smooth_loss
         else:
@@ -52,10 +48,7 @@ class CrossEntropyLoss(nn.Module):
         return loss, nll_loss
 
     def compute_accuracy(self, logits, target):
-        # Lấy chỉ số lớp có xác suất cao nhất
         pred = logits.argmax(dim=-1)
-        
-        # Tính số lượng mẫu dự đoán đúng
         correct = pred.eq(target).sum().float()
         accu = correct / target.size(0)
         return accu

@@ -32,10 +32,9 @@ class MinEditDisForwardKLD(CrossEntropyLoss):
         tokenizer_student = distiller.student_tokenizer
         tokenizer_teacher = distiller.teacher_tokenizers
 
-        # Bản đồ token đặc biệt
         TOKENIZER_TO_SPECIAL_TOKEN = {
-            type(tokenizer_teacher): "<s>",  # Token đặc biệt của teacher
-            type(tokenizer_student): "[CLS]"   # Token đặc biệt của student
+            type(tokenizer_teacher): "<s>",
+            type(tokenizer_student): "[CLS]"
         }
 
         # Get student outputs

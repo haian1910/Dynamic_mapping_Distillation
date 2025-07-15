@@ -34,7 +34,7 @@ from Classification.utils import (
 from Classification.criterions import build_criterion
 # from rouge_metric import compute_metrics
 
-torch.set_num_threads(4) # giới hạn số lượng thread torch sử dụng cho cpu
+torch.set_num_threads(4)
 
 def prepare_dataset(args, distiller):
     data = {}
@@ -145,7 +145,7 @@ def finetune(args, tokenizer: AutoTokenizer, model: deepspeed.DeepSpeedEngine, o
             
             model.backward(loss)
             model.step()
-            torch.cuda.synchronize()  # correctlyc compute time
+            torch.cuda.synchronize()  # correctly compute time
 
             elapsed_time = time.time() - st_time
             num_samples = input_batch["input_ids"].size(0)
