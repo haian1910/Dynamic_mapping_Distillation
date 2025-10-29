@@ -16,7 +16,7 @@ DISTRIBUTED_ARGS="--nproc_per_node $GPUS_PER_NODE \
 
 # model
 BASE_PATH=/LLM2Vec_Distillation
-CKPT_NAME="bert"
+CKPT_NAME="Tinybert_sft_patent"
 CKPT_PATH="${BASE_PATH}/model_hub/${CKPT_NAME}"
 # data
 DATA_DIR="${BASE_PATH}/data/patent/"
@@ -24,11 +24,11 @@ NUM_LABELS=9
 # task
 TASK="sft"
 # hp
-BATCH_SIZE=16
+BATCH_SIZE=4
 LR=0.00001
 GRAD_ACC=1
-EVAL_BATCH_SIZE=32
-EPOCH=2
+EVAL_BATCH_SIZE=4
+EPOCH=4
 # length
 MAX_LENGTH=512
 # runtime
@@ -71,7 +71,7 @@ OPTS+=" --max-length ${MAX_LENGTH}"
 OPTS+=" --max-prompt-length 256"
 # runtime
 OPTS+=" --do-train"
-OPTS+=" --do-valid"
+OPTS+=" --do-eval"
 OPTS+=" --save-interval 1"
 OPTS+=" --eval-interval 1"
 OPTS+=" --log-interval 50"
@@ -82,13 +82,8 @@ OPTS+=" --criterion ${CRITERION}"
 OPTS+=" --seed ${SEED}"
 # deepspeed
 OPTS+=" --deepspeed"
-if [[ $PRECISION == "bf16" ]]; then
-    OPTS+=" --deepspeed_config ${BASE_PATH}/configs/deepspeed/ds_config_bf16.json"
-elif [[ $PRECISION == "fp16" ]]; then
-    OPTS+=" --deepspeed_config ${BASE_PATH}/configs/deepspeed/ds_config.json"
-elif [[ $PRECISION == "fp32" ]]; then
-    OPTS+=" --deepspeed_config ${BASE_PATH}/configs/deepspeed/ds_config_fp32.json"
-fi
+OPTS+=" --deepspeed_config ${BASE_PATH}/configs/deepspeed/ds_config_test.json"
+
 
 
 export NCCL_DEBUG=""
