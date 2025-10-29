@@ -16,7 +16,7 @@ DISTRIBUTED_ARGS="--nproc_per_node $GPUS_PER_NODE \
 
 # model
 BASE_PATH=/mnt/bn/magellan-product-audit/tu.vu/matrixone/Dynamic_mapping_Distillation
-CKPT_NAME="bert"
+CKPT_NAME="Tinybert_MoL_patent"
 CKPT_PATH="${BASE_PATH}/model_hub/${CKPT_NAME}"
 TEACHER_MODEL_NAME="LLM2Vec"
 TEACHER_MODEL_PATH="/mnt/bn/magellan-product-audit/tu.vu/matrixone/LLM2Vec_Distillation/outputs/LLM2Vec/sft/patent/criterion=cross_entropy__lora-rank=16-alpha=32-dropout=0.1-bf16__epoch=2__bsz=8x1x8=64__lr=0.00001/epoch2_step782_loss0.1096" # GẮN LINK MODEL CHECKPOINT VÀO ĐÂY
