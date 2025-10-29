@@ -21,7 +21,6 @@ import torch.distributed as dist
 import os
 #token = os.getenv("HF_TOKEN")
 #login(token=token)
-login(token="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")
 
 class Distiller(nn.Module):
     def __init__(self, args, device):
@@ -182,11 +181,11 @@ class Distiller(nn.Module):
             else:
                 raise NotImplementedError
         else: #for BERT
-            config = AutoConfig.from_pretrained("bert-base-uncased", trust_remote_code=True)
+            config = AutoConfig.from_pretrained("huawei-noah/TinyBERT_General_4L_312D", trust_remote_code=True)
             config.is_model_parallel = False
     
             # lấy tokenizer
-            tokenizer = self.load_tokenizer("bert-base-uncased")
+            tokenizer = self.load_tokenizer("huawei-noah/TinyBERT_General_4L_312D")
             
             if hasattr(config, "n_embed"):
                 self.hidden_size = config.n_embed
@@ -194,7 +193,7 @@ class Distiller(nn.Module):
                 self.hidden_size = config.hidden_size
             config.num_labels = self.args.num_labels
             model = AutoModelForSequenceClassification.from_pretrained(
-                "bert-base-uncased", 
+                "huawei-noah/TinyBERT_General_4L_312D", 
                 config=config, 
                 device_map=None, 
                 torch_dtype=self.dtype,
