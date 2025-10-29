@@ -198,7 +198,7 @@ class Distiller(nn.Module):
             config.is_model_parallel = False
     
             # lấy tokenizer
-            tokenizer = self.load_tokenizer("bert-base-uncased")
+            tokenizer = self.load_tokenizer("huawei-noah/TinyBERT_General_4L_312D")
             
             if hasattr(config, "n_embed"):
                 self.hidden_size = config.n_embed
