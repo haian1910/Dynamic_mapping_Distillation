@@ -16,7 +16,7 @@ DISTRIBUTED_ARGS="--nproc_per_node $GPUS_PER_NODE \
 
 # model
 BASE_PATH=/LLM2Vec_Distillation
-CKPT_NAME="bert"
+CKPT_NAME="Tinybert_sft_imdb"
 CKPT_PATH="${BASE_PATH}/model_hub/${CKPT_NAME}"
 # data
 DATA_DIR="${BASE_PATH}/data/imdb/"
@@ -28,7 +28,7 @@ BATCH_SIZE=4
 LR=0.00001
 GRAD_ACC=1
 EVAL_BATCH_SIZE=4
-EPOCH=3
+EPOCH=4
 # length
 MAX_LENGTH=512
 # runtime
