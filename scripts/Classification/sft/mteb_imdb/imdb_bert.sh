@@ -16,7 +16,7 @@ DISTRIBUTED_ARGS="--nproc_per_node $GPUS_PER_NODE \
 
 # model
 BASE_PATH=/LLM2Vec_Distillation
-CKPT_NAME="Tinybert_sft_imdb"
+CKPT_NAME="Tinybert6L_sft_imdb"
 CKPT_PATH="${BASE_PATH}/model_hub/${CKPT_NAME}"
 # data
 DATA_DIR="${BASE_PATH}/data/imdb/"
