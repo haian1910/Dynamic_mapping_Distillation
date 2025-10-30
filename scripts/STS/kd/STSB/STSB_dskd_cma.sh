@@ -16,7 +16,7 @@ DISTRIBUTED_ARGS="--nproc_per_node $GPUS_PER_NODE \
 
 # model
 BASE_PATH=/LLM2Vec_Distillation
-CKPT_NAME="bert"
+CKPT_NAME="Tinybert_DSKD_STSB"
 CKPT_PATH="${BASE_PATH}/model_hub/${CKPT_NAME}"
 TEACHER_MODEL_NAME="LLM2Vec"
 TEACHER_MODEL_PATH="${BASE_PATH}/model_hub/${TEACHER_MODEL_NAME}" # GẮN LINK MODEL CHECKPOINT VÀO ĐÂY
@@ -25,11 +25,11 @@ DATA_DIR="${BASE_PATH}/data/STSB/"
 # task
 TASK="dual_space_kd_with_cross_model_attention"
 # hp
-BATCH_SIZE=2
+BATCH_SIZE=4
 LR=0.00001
 GRAD_ACC=1
-EVAL_BATCH_SIZE=2
-EPOCH=3
+EVAL_BATCH_SIZE=4
+EPOCH=5
 KD_RATE=0.5
 KD_TEMP=2.0
 # length
