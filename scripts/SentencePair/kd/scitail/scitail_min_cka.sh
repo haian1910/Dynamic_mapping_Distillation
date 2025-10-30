@@ -16,7 +16,7 @@ DISTRIBUTED_ARGS="--nproc_per_node $GPUS_PER_NODE \
 
 # model
 BASE_PATH=/mnt/bn/magellan-product-audit/tu.vu/matrixone/Dynamic_mapping_Distillation
-CKPT_NAME="bert"
+CKPT_NAME="TinyBERT6L_MOL_scitail"
 CKPT_PATH="${BASE_PATH}/model_hub/${CKPT_NAME}"
 TEACHER_MODEL_NAME="LLM2Vec"
 TEACHER_MODEL_PATH="/mnt/bn/magellan-product-audit/tu.vu/matrixone/LLM2Vec_Distillation/outputs/LLM2Vec/sft/scitail/criterion=cross_entropy__lora-rank=16-alpha=32-dropout=0.1-bf16__epoch=2__bsz=16x1x1=16__lr=0.00001/epoch1_step1444_loss0.1227"
