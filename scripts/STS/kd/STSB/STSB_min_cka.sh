@@ -16,7 +16,7 @@ DISTRIBUTED_ARGS="--nproc_per_node $GPUS_PER_NODE \
 
 # model
 BASE_PATH=/mnt/bn/magellan-product-audit/tu.vu/matrixone/Dynamic_mapping_Distillation
-CKPT_NAME="bert"
+CKPT_NAME="Tinybert_MOL_STSB"
 CKPT_PATH="${BASE_PATH}/model_hub/${CKPT_NAME}"
 TEACHER_MODEL_NAME="LLM2Vec"
 TEACHER_MODEL_PATH="/mnt/bn/magellan-product-audit/tu.vu/matrixone/Dynamic_mapping_Distillation/outputs/LLM2Vec/stsbenchmark/sft/criterion=sts_loss__lora-rank=256-alpha=16-dropout=0.1-bf16__epoch=5__bsz=4x1x1=4__lr=0.00001/epoch4_step5752_loss2.2994_pearson0.8373" # GẮN LINK MODEL CHECKPOINT VÀO ĐÂY
@@ -25,10 +25,10 @@ DATASET=stsbenchmark
 DATA_DIR="${BASE_PATH}/data/${DATASET}" #task
 TASK="min_cka"
 # hp
-BATCH_SIZE=2
+BATCH_SIZE=4
 LR=0.00001
 GRAD_ACC=1
-EVAL_BATCH_SIZE=2
+EVAL_BATCH_SIZE=4
 EPOCH=5
 KD_RATE=0.5
 KD_TEMP=2.0
