@@ -467,11 +467,11 @@ class Distiller(nn.Module):
             else:
                 raise NotImplementedError(f"PEFT method {self.args.peft} not implemented for STS tasks")
         else: # for BERT
-            config = AutoConfig.from_pretrained("bert-base-uncased", trust_remote_code=True)
+            config = AutoConfig.from_pretrained("huawei-noah/TinyBERT_General_4L_312D", trust_remote_code=True)
             config.is_model_parallel = False
 
             # Get tokenizer
-            tokenizer = self.load_tokenizer("bert-base-uncased")
+            tokenizer = self.load_tokenizer("huawei-noah/TinyBERT_General_4L_312D")
 
             if hasattr(config, "n_embed"):
                 self.hidden_size = config.n_embed
@@ -480,7 +480,7 @@ class Distiller(nn.Module):
 
             # Load base model using AutoModel
             base_model = AutoModel.from_pretrained(
-                "bert-base-uncased", 
+                "huawei-noah/TinyBERT_General_4L_312D", 
                 config=config, 
                 device_map=None, 
                 torch_dtype=self.dtype,
