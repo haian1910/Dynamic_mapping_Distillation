@@ -24,13 +24,13 @@ NUM_LABELS=2
 # task
 TASK="sft"
 # hp
-BATCH_SIZE=2
+BATCH_SIZE=16
 LR=0.00001
 GRAD_ACC=1
-EVAL_BATCH_SIZE=2
-EPOCH=2
+EVAL_BATCH_SIZE=16
+EPOCH=5
 LORA_RANK=256
-LORA_ALPHA=16
+LORA_ALPHA=8
 LORA_DROPOUT=0.1
 # length
 MAX_LENGTH=512
@@ -105,7 +105,7 @@ export NCCL_DEBUG=""
 export WANDB_DISABLED=True
 export TF_CPP_MIN_LOG_LEVEL=3
 export PYTHONPATH=${BASE_PATH}
-CMD="torchrun ${DISTRIBUTED_ARGS} ${BASE_PATH}/Classification/distillation.py ${OPTS}"
+CMD="torchrun ${DISTRIBUTED_ARGS} ${BASE_PATH}/Classification/BGE_distillation.py ${OPTS}"
 
 echo ${CMD}
 # ${CMD}
