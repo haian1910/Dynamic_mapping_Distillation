@@ -21,7 +21,7 @@ from transformers import (
 )
 from transformers.integrations import HfDeepSpeedConfig
 from STS.arguments import get_args
-from STS.distiller import Distiller
+from STS.QWEN_distiller import Distiller
 from STS.data_utils.distill_datasets import STSDataset
 from STS.utils import (
     initialize,
