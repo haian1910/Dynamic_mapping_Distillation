@@ -25,11 +25,11 @@ DATA_DIR="${BASE_PATH}/data/SICK/"
 # task
 TASK="dual_space_kd_with_cross_model_attention"
 # hp
-BATCH_SIZE=2
+BATCH_SIZE=4
 LR=0.00001
 GRAD_ACC=1
-EVAL_BATCH_SIZE=2
-EPOCH=3
+EVAL_BATCH_SIZE=4
+EPOCH=5
 KD_RATE=0.5
 KD_TEMP=2.0
 # length
@@ -106,7 +106,7 @@ export NCCL_DEBUG=""
 export WANDB_DISABLED=True
 export TF_CPP_MIN_LOG_LEVEL=3
 export PYTHONPATH=${BASE_PATH}
-CMD="torchrun ${DISTRIBUTED_ARGS} ${BASE_PATH}/STS/distillation.py ${OPTS}"
+CMD="torchrun ${DISTRIBUTED_ARGS} ${BASE_PATH}/STS/BGE_distillation.py ${OPTS}"
 
 ${CMD} \
 >> ${SAVE_PATH}/train.log 2>&1 &
