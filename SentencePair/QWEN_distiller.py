@@ -236,16 +236,16 @@ class Distiller(nn.Module):
             model.config.pad_token_id = tokenizer.pad_token_id
         
         # Check if we should load pre-trained weights before fine-tuning
-        if hasattr(self.args, 'pretrained_model_path') and self.args.pretrained_model_path:
+        if hasattr(self.args, 'teacher_model_path') and self.args.teacher_model_path:
             # Try to load the full model weights
-            model_path = os.path.join(self.args.pretrained_model_path, "pytorch_model.bin")
+            model_path = os.path.join(self.args.teacher_model_path, "pytorch_model.bin")
             if os.path.exists(model_path):
                 log_rank("Loading pretrained weights before fine-tuning...")
                 model_state_dict = torch.load(model_path, map_location="cpu")
                 model.load_state_dict(model_state_dict, strict=False)
 
             # Try to load classifier head if available
-            classifier_path = os.path.join(self.args.pretrained_model_path, "classifier_head.bin")
+            classifier_path = os.path.join(self.args.teacher_model_path, "classifier_head.bin")
             if os.path.exists(classifier_path):
                 log_rank("Loading classifier head...")
                 classifier_state_dict = torch.load(classifier_path, map_location="cpu")
