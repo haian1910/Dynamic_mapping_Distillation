@@ -16,7 +16,7 @@ DISTRIBUTED_ARGS="--nproc_per_node $GPUS_PER_NODE \
 
 # model
 BASE_PATH=/mnt/bn/magellan-product-audit/tu.vu/matrixone/Dynamic_mapping_Distillation
-CKPT_NAME="LLM2Vec"
+CKPT_NAME="BGE"
 CKPT_PATH="${BASE_PATH}/model_hub/${CKPT_NAME}"
 # data
 DATASET=stsbenchmark
