@@ -44,7 +44,7 @@ SETTING=criterion=${CRITERION}__${CONFIG}__teacher=${TEACHER_MODEL_NAME}__kd^rat
 SAVE_PATH="${BASE_PATH}/outputs/${CKPT_TYPE}/${CKPT_NAME}/${TASK}/${SETTING}"
 SAVE_BEST_N_CKPTS=1
 # seed
-SEED=10
+SEED=9
 
 mkdir -p ${SAVE_PATH}
 
