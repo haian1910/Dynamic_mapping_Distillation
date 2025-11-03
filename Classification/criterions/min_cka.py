@@ -108,7 +108,7 @@ class MIN_CKA(VariousDivergence):
                 weight = []
                 align_matrix = []
                 # Find best matching teacher layer
-                index_list = [9*k-2, 9*k-1, 9*k, 9*k+1, 9*k+2]
+                index_list = [3*k-2, 3*k-1, 3*k, 3*k+1, 3*k+2]
                 best_cka_loss = float('inf')
                 
                 for l in index_list:
