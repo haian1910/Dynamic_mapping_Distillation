@@ -181,11 +181,11 @@ class Distiller(nn.Module):
             else:
                 raise NotImplementedError
         else: #for BERT
-            config = AutoConfig.from_pretrained("huawei-noah/TinyBERT_General_6L_768D", trust_remote_code=True)
+            config = AutoConfig.from_pretrained("huawei-noah/TinyBERT_General_4L_312D", trust_remote_code=True)
             config.is_model_parallel = False
     
             # lấy tokenizer
-            tokenizer = self.load_tokenizer("huawei-noah/TinyBERT_General_6L_768D")
+            tokenizer = self.load_tokenizer("huawei-noah/TinyBERT_General_4L_312D")
             
             if hasattr(config, "n_embed"):
                 self.hidden_size = config.n_embed
@@ -193,7 +193,7 @@ class Distiller(nn.Module):
                 self.hidden_size = config.hidden_size
             config.num_labels = self.args.num_labels
             model = AutoModelForSequenceClassification.from_pretrained(
-                "huawei-noah/TinyBERT_General_6L_768D", 
+                "huawei-noah/TinyBERT_General_4L_312D", 
                 config=config, 
                 device_map=None, 
                 torch_dtype=self.dtype,
